@@ -85,7 +85,7 @@ uploadArchives {
                 licenses {
                     license {
                         name 'Common Public License - v 1.0'
-                        url 'https://raw.github.com/signed/junit-extras/master/license'
+                        url 'https://raw.github.com/signed/junit-extras/master/LICENSE.txt'
                         distribution 'repo'
                     }
                 }
