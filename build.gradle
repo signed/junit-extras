@@ -1,0 +1,102 @@
+apply plugin: "java"
+apply plugin: "idea"
+
+idea {
+    project {
+        ipr {
+            withXml {
+                def project = it.asNode()
+                def vcsDirectoryMappings = project.component.find { it.@name == 'VcsDirectoryMappings' };
+                vcsDirectoryMappings.children().clear()
+                vcsDirectoryMappings.appendNode('mapping', ['directory': '$PROJECT_DIR$', 'vcs': 'Git'])
+            }
+        }
+    }
+}
+
+dependencies {
+    compile 'junit:junit:4.11'
+}
+
+configurations.all {
+    resolutionStrategy {
+        failOnVersionConflict()
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'com.github.signed.junit'
+version = '0.0.1-SNAPSHOT'
+
+//def repositoryUrl = 'http://localhost:8081/nexus/content/repositories/snapshots'
+def repositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+if(project.hasProperty('release')){
+    project.version -= '-SNAPSHOT'
+    //repositoryUrl = 'http://localhost:8081/nexus/content/repositories/releases'
+    repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+//http://jedicoder.blogspot.de/2011/11/automated-gradle-project-deployment-to.html
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: repositoryUrl) {
+                authentication(userName: deploymentNexusLocalLogin, password: deploymentNexusLocalPassword)
+            }
+
+            pom.project {
+                name 'junit-extras'
+                packaging 'jar'
+                inceptionYear '2012'
+                description 'junit-extras is a set of small extensions to junit'
+                url 'https://github.com/signed/junit-extras'
+
+                scm {
+                    url 'scm:git@github.com:signed/junit-extras.git'
+                    connection 'scm:git://github.com/signed/junit-extras.git'
+                    developerConnection 'scm:git@github.com:signed/junit-extras.git'
+                }
+
+                licenses {
+                    license {
+                        name 'Common Public License - v 1.0'
+                        url 'https://raw.github.com/signed/junit-extras/master/license'
+                        distribution 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'thomasheilbronner'
+                        name 'Thomas Heilbronner'
+                    }
+                }
+            }
+        }
+    }
+}
